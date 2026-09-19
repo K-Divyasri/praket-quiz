@@ -188,14 +188,31 @@ input[type=text]::placeholder{color:#6d6186}
 .pausebox .btns{display:grid; gap:10px; margin-top:8px}
 .pausebox .btns button{text-align:left}
 
-/* collage */
+/* photo gallery */
+body.wide .wrap{max-width:none}
 .colhead{display:flex; align-items:end; justify-content:space-between; gap:16px; flex-wrap:wrap}
-.colhead h2{font-size:clamp(2.2rem,6vw,3.6rem)}
-.collage{columns:5 210px; column-gap:16px; margin-top:28px}
-.collage figure{break-inside:avoid; margin:0 0 18px; background:var(--paper); padding:7px; border-radius:3px; box-shadow:0 10px 26px rgba(0,0,0,.4); transform:rotate(var(--rot)); transition:transform .2s}
-.collage figure:hover{transform:rotate(0deg) scale(1.03)}
-.collage button{display:block; width:100%; padding:0}
-.collage img{width:100%; height:auto; border-radius:2px}
+.colhead h2{font-size:clamp(2rem,4.5vw,3.2rem)}
+.colbtns{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.jcol{margin-top:18px; display:grid; gap:5px}
+.jrow{display:flex; gap:5px; overflow:hidden}
+.jrow button{flex:none; height:100%; padding:0; overflow:hidden; border-radius:4px; background:var(--ink-sunk)}
+.jrow img{width:100%; height:100%; object-fit:cover; transition:transform .35s ease}
+.jrow button:hover img{transform:scale(1.07)}
+.jrow button:focus-visible{outline-offset:-3px}
+
+/* slideshow */
+.show{position:fixed; inset:0; z-index:75; background:#07050b; display:none}
+.show.on{display:block}
+.show.idle{cursor:none}
+.show .layer{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 1.2s ease; overflow:hidden}
+.show .layer.vis{opacity:1}
+.show .layer img{max-width:100%; max-height:100%; object-fit:contain}
+.show .layer img.kb{animation:kb 7s ease-out both}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.06)}}
+.show .bar{position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; padding-inline:16px; padding-block:22px; background:linear-gradient(transparent, rgba(0,0,0,.65)); transition:opacity .4s}
+.show.idle .bar{opacity:0}
+.show .bar button{padding:10px 18px; border-radius:99px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); color:#fff}
+.show .ctr{font-family:var(--mono); font-size:.85rem; color:rgba(255,255,255,.75); min-width:72px; text-align:center; font-variant-numeric:tabular-nums}
 .box{position:fixed; inset:0; z-index:70; background:rgba(10,7,16,.96); display:none; align-items:center; justify-content:center; padding:20px}
 .box.on{display:flex}
 .box img{max-height:82vh; max-width:100%; border-radius:8px}
@@ -291,7 +308,7 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
   </div>
 
   <div class="startrow">
-    <button type="button" class="ghost" id="startCollage">See all the pics</button>
+    <button type="button" class="ghost" id="startCollage">Photo gallery</button>
   </div>
 </section>
 
@@ -360,7 +377,7 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
   <div class="board" id="endBoard"></div>
   <div class="startrow">
     <button type="button" class="btn blue" id="toPart2">On to part 2</button>
-    <button type="button" class="ghost" id="endCollage">See all the pics</button>
+    <button type="button" class="ghost" id="endCollage">Photo gallery</button>
     <button type="button" class="ghost" data-home>Back to the start</button>
   </div>
 </section>
@@ -438,7 +455,7 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
     <div class="thumbs" id="forgotGrid"></div>
   </div>
   <div class="startrow">
-    <button type="button" class="btn" id="mEndCollage">See all the pics</button>
+    <button type="button" class="btn" id="mEndCollage">Photo gallery</button>
     <button type="button" class="ghost" data-home>Back to the start</button>
   </div>
 </section>
@@ -447,11 +464,14 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
   <div class="colhead">
     <div>
       <p class="label" id="colCount"></p>
-      <h2 style="margin-top:8px">All the pics</h2>
+      <h2 style="margin-top:6px">Photo gallery</h2>
     </div>
-    <button type="button" class="ghost" id="colBack">Back</button>
+    <div class="colbtns">
+      <button type="button" class="btn" id="slideBtn">Play slideshow</button>
+      <button type="button" class="ghost" id="colBack">Back</button>
+    </div>
   </div>
-  <div class="collage" id="collage"></div>
+  <div class="jcol" id="collage"></div>
 </section>
 
 </div>
@@ -473,6 +493,17 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
   <button type="button" class="x" id="boxClose">Close</button>
   <img id="boxImg" alt="">
   <div class="ctl"><button type="button" id="boxPrev">Prev</button><button type="button" id="boxNext">Next</button></div>
+</div>
+<div class="show" id="show" role="dialog" aria-modal="true" aria-label="Slideshow">
+  <div class="layer" id="showA"><img alt=""></div>
+  <div class="layer" id="showB"><img alt=""></div>
+  <div class="bar">
+    <button type="button" id="showPrev">Prev</button>
+    <button type="button" id="showPlay">Pause</button>
+    <span class="ctr" id="showCtr"></span>
+    <button type="button" id="showNext">Next</button>
+    <button type="button" id="showClose">Close</button>
+  </div>
 </div>
 <canvas class="burst" id="burst"></canvas>
 
@@ -512,6 +543,7 @@ let current = "s-start";
 function show(id){
   SCREENS.forEach(s => $(s).classList.toggle("on", s === id));
   current = id;
+  document.body.classList.toggle("wide", id === "s-collage");
   window.scrollTo(0, 0);
 }
 
@@ -993,32 +1025,129 @@ $("skipBtn").addEventListener("click", () => {
 });
 $("endBtn").addEventListener("click", () => { if (inPart2()) finish2(); else finish1(); });
 
-/* ---------- collage and photo viewer ---------- */
-let collageBuilt = false, collageFrom = "s-start", boxList = [], boxAt = 0;
-const ALL_IDS = COLLAGE.map(c => c.p);
-function openCollage(from){
-  collageFrom = from;
-  if (!collageBuilt){
-    collageBuilt = true;
-    $("colCount").textContent = COLLAGE.length + " pics";
-    const wrap = $("collage");
-    COLLAGE.forEach((c, i) => {
-      const fig = document.createElement("figure");
-      fig.style.setProperty("--rot", ((Math.random() * 5) - 2.5).toFixed(2) + "deg");
+/* ---------- photo gallery: every pic in one collage, plus a slideshow ---------- */
+let collageFrom = "s-start", boxList = [], boxAt = 0;
+const GAL = (function(){   /* fixed mixed order, so the collage looks the same every time */
+  let seed = 20260919;
+  const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const a = COLLAGE.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+})();
+const GAL_IDS = GAL.map(c => c.p);
+const GAP = 5;
+
+function rowsFor(W, H){
+  const rows = [];
+  let row = [], sum = 0;
+  GAL.forEach(c => {
+    row.push(c); sum += c.w / c.h;
+    if (sum * H + GAP * (row.length - 1) >= W){
+      rows.push({items: row, h: (W - GAP * (row.length - 1)) / sum});
+      row = []; sum = 0;
+    }
+  });
+  if (row.length) rows.push({items: row, h: Math.min(H, (W - GAP * (row.length - 1)) / sum)});
+  return rows;
+}
+function layoutGallery(){
+  const wrap = $("collage");
+  const W = wrap.clientWidth;
+  if (!W) return;
+  const avail = innerHeight - wrap.getBoundingClientRect().top - 20;
+  const height = rows => rows.reduce((t, r) => t + r.h, 0) + GAP * (rows.length - 1);
+  let lo = 30, hi = 700;
+  for (let k = 0; k < 22; k++){
+    const mid = (lo + hi) / 2;
+    if (height(rowsFor(W, mid)) <= avail) lo = mid; else hi = mid;
+  }
+  const H = Math.max(lo, W < 700 ? 110 : 70);
+  wrap.innerHTML = "";
+  let idx = 0;
+  rowsFor(W, H).forEach(r => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "jrow";
+    rowEl.style.height = r.h.toFixed(1) + "px";
+    r.items.forEach(c => {
+      const i = idx++;
       const b = document.createElement("button");
       b.type = "button";
+      b.style.width = (Math.floor(c.w / c.h * r.h * 10) / 10) + "px";
       b.setAttribute("aria-label", "Open photo " + (i + 1));
       const im = document.createElement("img");
-      im.src = P + c.p + ".jpg"; im.alt = ""; im.loading = "lazy";
-      im.width = c.w; im.height = c.h;
+      im.src = P + c.p + ".jpg"; im.alt = "";
+      im.loading = i < 40 ? "eager" : "lazy";
       b.appendChild(im);
-      b.addEventListener("click", () => openBox(ALL_IDS, i));
-      fig.appendChild(b);
-      wrap.appendChild(fig);
+      b.addEventListener("click", () => openBox(GAL_IDS, i));
+      rowEl.appendChild(b);
     });
+    wrap.appendChild(rowEl);
+  });
+  /* the page scrollbar can vanish once the collage fits, so measure again */
+  if (Math.abs(wrap.clientWidth - W) > 1 && !layoutGallery.again){
+    layoutGallery.again = true; layoutGallery(); layoutGallery.again = false;
   }
-  show("s-collage");
 }
+function openCollage(from){
+  collageFrom = from;
+  $("colCount").textContent = GAL.length + " pics";
+  show("s-collage");
+  layoutGallery();
+}
+let relayout = 0;
+addEventListener("resize", () => {
+  if (current !== "s-collage") return;
+  clearTimeout(relayout);
+  relayout = setTimeout(layoutGallery, 150);
+});
+
+const Show = {on: false, i: 0, playing: true, t: 0, idle: 0, front: null};
+function showOpen(i){
+  Show.on = true; Show.i = i; Show.playing = true;
+  $("show").classList.add("on");
+  try {
+    const el = document.documentElement;
+    if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {});
+  } catch (e) {}
+  showPaint(); showArm(); showWake();
+}
+function showPaint(){
+  const a = $("showA"), b = $("showB");
+  const next = Show.front === a ? b : a;
+  const img = next.querySelector("img");
+  img.src = P + GAL_IDS[Show.i] + ".jpg";
+  img.alt = "Photo " + (Show.i + 1) + " of " + GAL_IDS.length;
+  img.classList.remove("kb"); void img.offsetWidth; img.classList.add("kb");
+  next.classList.add("vis");
+  if (Show.front && Show.front !== next) Show.front.classList.remove("vis");
+  Show.front = next;
+  $("showCtr").textContent = (Show.i + 1) + " / " + GAL_IDS.length;
+  const pre = new Image(); pre.src = P + GAL_IDS[(Show.i + 1) % GAL_IDS.length] + ".jpg";
+}
+function showArm(){
+  clearTimeout(Show.t);
+  if (Show.playing) Show.t = setTimeout(() => showGo(1), 5000);
+  $("showPlay").textContent = Show.playing ? "Pause" : "Play";
+}
+function showGo(d){ Show.i = (Show.i + d + GAL_IDS.length) % GAL_IDS.length; showPaint(); showArm(); }
+function showClose(){
+  Show.on = false; clearTimeout(Show.t);
+  $("show").classList.remove("on");
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+}
+function showWake(){
+  $("show").classList.remove("idle");
+  clearTimeout(Show.idle);
+  Show.idle = setTimeout(() => $("show").classList.add("idle"), 2500);
+}
+$("slideBtn").addEventListener("click", () => showOpen(0));
+$("showPrev").addEventListener("click", () => showGo(-1));
+$("showNext").addEventListener("click", () => showGo(1));
+$("showPlay").addEventListener("click", () => { Show.playing = !Show.playing; showArm(); });
+$("showClose").addEventListener("click", showClose);
+$("show").addEventListener("mousemove", showWake);
+$("show").addEventListener("click", showWake);
+
 $("startCollage").addEventListener("click", () => openCollage("s-start"));
 $("endCollage").addEventListener("click", () => openCollage("s-end"));
 $("mEndCollage").addEventListener("click", () => openCollage("s-m-end"));
@@ -1038,6 +1167,14 @@ $("boxNext").addEventListener("click", () => openBox(boxList, boxAt + 1));
 $("box").addEventListener("click", e => { if (e.target === $("box")) closeBox(); });
 
 addEventListener("keydown", e => {
+  if (Show.on){
+    if (e.key === "Escape") showClose();
+    if (e.key === "ArrowLeft") showGo(-1);
+    if (e.key === "ArrowRight") showGo(1);
+    if (e.key === " "){ e.preventDefault(); Show.playing = !Show.playing; showArm(); }
+    showWake();
+    return;
+  }
   if ($("box").classList.contains("on")){
     if (e.key === "Escape") closeBox();
     if (e.key === "ArrowLeft") openBox(boxList, boxAt - 1);
@@ -1092,6 +1229,7 @@ function ptick(){
 buildStrip();
 $("whoInput").value = cfg.who;
 paintStart();
+if (location.hash === "#gallery") openCollage("s-start");
 </script>
 
 </body>
