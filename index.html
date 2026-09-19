@@ -502,6 +502,7 @@ canvas.burst{position:fixed; inset:0; z-index:80; pointer-events:none}
     <button type="button" id="showPlay">Pause</button>
     <span class="ctr" id="showCtr"></span>
     <button type="button" id="showNext">Next</button>
+    <button type="button" id="showMusic">Music on</button>
     <button type="button" id="showClose">Close</button>
   </div>
 </div>
@@ -804,7 +805,6 @@ function advance1(){
 function afterInterlude(){
   if (MSG && G.i === MSG.at && !G.msgDone) return showMsg();
   if (TALK && G.i === TALK.at && !G.talkDone) return showTalk();
-  if (G.i % 5 === 0) return showScores();
   renderCard();
 }
 function showTalk(){
@@ -1101,10 +1101,73 @@ addEventListener("resize", () => {
   relayout = setTimeout(layoutGallery, 150);
 });
 
+/* ---------- happy birthday, played by the browser so there is no audio file to load ---------- */
+const TUNE = [
+  ["G4", 0.75], ["G4", 0.25], ["A4", 1], ["G4", 1], ["C5", 1], ["B4", 2],
+  ["G4", 0.75], ["G4", 0.25], ["A4", 1], ["G4", 1], ["D5", 1], ["C5", 2],
+  ["G4", 0.75], ["G4", 0.25], ["G5", 1], ["E5", 1], ["C5", 1], ["B4", 1], ["A4", 2],
+  ["F5", 0.75], ["F5", 0.25], ["E5", 1], ["C5", 1], ["D5", 1], ["C5", 2.5]
+];
+const HZ = {G4: 392.00, A4: 440.00, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99};
+const Music = {
+  on: recall("music", true), ctx: null, master: null, timer: 0,
+  ready(){
+    if (!this.ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.9;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    return this.ctx;
+  },
+  note(freq, at, dur){
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = "triangle";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.2, at + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + Math.max(0.08, dur * 0.95));
+    o.connect(g); g.connect(this.master);
+    o.start(at); o.stop(at + dur + 0.05);
+  },
+  pass(){
+    if (!this.on || !Show.on) return;
+    const ctx = this.ready();
+    if (!ctx) return;
+    const beat = 0.5;
+    let t = ctx.currentTime + 0.2;
+    TUNE.forEach(pair => { this.note(HZ[pair[0]], t, pair[1] * beat * 0.92); t += pair[1] * beat; });
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.pass(), (t - ctx.currentTime + 2.5) * 1000);
+  },
+  start(){
+    if (!this.on) return;
+    const ctx = this.ready();
+    if (!ctx) return;
+    this.master.gain.setTargetAtTime(0.9, ctx.currentTime, 0.05);
+    this.pass();
+  },
+  stop(){
+    clearTimeout(this.timer);
+    if (this.ctx && this.master) this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+  },
+  toggle(){
+    this.on = !this.on;
+    store("music", this.on);
+    $("showMusic").textContent = this.on ? "Music on" : "Music off";
+    if (this.on) this.start(); else this.stop();
+  }
+};
+
 const Show = {on: false, i: 0, playing: true, t: 0, idle: 0, front: null};
 function showOpen(i){
   Show.on = true; Show.i = i; Show.playing = true;
   $("show").classList.add("on");
+  $("showMusic").textContent = Music.on ? "Music on" : "Music off";
+  Music.start();
   try {
     const el = document.documentElement;
     if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {});
@@ -1132,6 +1195,7 @@ function showArm(){
 function showGo(d){ Show.i = (Show.i + d + GAL_IDS.length) % GAL_IDS.length; showPaint(); showArm(); }
 function showClose(){
   Show.on = false; clearTimeout(Show.t);
+  Music.stop();
   $("show").classList.remove("on");
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
 }
@@ -1145,6 +1209,7 @@ $("showPrev").addEventListener("click", () => showGo(-1));
 $("showNext").addEventListener("click", () => showGo(1));
 $("showPlay").addEventListener("click", () => { Show.playing = !Show.playing; showArm(); });
 $("showClose").addEventListener("click", showClose);
+$("showMusic").addEventListener("click", () => Music.toggle());
 $("show").addEventListener("mousemove", showWake);
 $("show").addEventListener("click", showWake);
 
@@ -1172,6 +1237,7 @@ addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") showGo(-1);
     if (e.key === "ArrowRight") showGo(1);
     if (e.key === " "){ e.preventDefault(); Show.playing = !Show.playing; showArm(); }
+    if (e.key === "m" || e.key === "M") Music.toggle();
     showWake();
     return;
   }
